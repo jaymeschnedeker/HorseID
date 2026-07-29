@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horse ID Quest — Trail Rangers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#0e2620; --panel:#17392c; --panel2:#1f4c3a; --edge:#2c6349;
+  --lime:#9ede3f; --sky:#35c4f0; --sun:#ffb020; --berry:#ff5f6d;
+  --bone:#f4f7ea; --mist:#a9c6b6;
+  --blaze:#2f7fd6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 600px at 50% -10%, #1b4a38 0%, transparent 60%),
+    var(--night);
+  color:var(--bone); font-family:'Nunito',sans-serif; font-weight:700;
+  -webkit-text-size-adjust:100%; overflow-x:hidden;
+}
+h1,h2,h3,.display{font-family:'Baloo 2',cursive; font-weight:800; line-height:1.05; letter-spacing:.2px}
+button{font-family:inherit; font-weight:900; cursor:pointer; border:none; color:inherit}
+button:focus-visible,[tabindex]:focus-visible{outline:4px solid var(--sun); outline-offset:3px; border-radius:6px}
+
+/* ---------- shell ---------- */
+.app{max-width:820px; margin:0 auto; padding:14px 14px 90px; min-height:100%}
+.topbar{
+  display:flex; align-items:center; gap:10px; background:var(--panel);
+  border:3px solid var(--edge); border-radius:20px; padding:9px 12px; margin-bottom:14px;
+  position:sticky; top:8px; z-index:40;
+}
+.brandmark{width:34px;height:34px;border-radius:9px;background:var(--blaze);flex:0 0 auto;
+  display:grid;place-items:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.28)}
+.brandmark span{display:block;width:11px;height:20px;background:var(--bone);border-radius:2px}
+.brandtext{font-family:'Baloo 2';font-size:15px;line-height:1.05}
+.brandtext small{display:block;font-family:'Nunito';font-weight:700;font-size:10px;letter-spacing:1.6px;color:var(--mist)}
+.badgetray{margin-left:auto;display:flex;gap:5px}
+.slot{width:28px;height:28px;border-radius:50%;border:2.5px dashed var(--edge);display:grid;place-items:center;font-size:14px}
+.slot.won{border:2.5px solid var(--sun);background:var(--sun);color:#3a2400;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.2) rotate(-30deg)}100%{transform:scale(1) rotate(0)}}
+
+.screen{display:none;animation:fade .35s ease}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.card{background:var(--panel);border:3px solid var(--edge);border-radius:24px;padding:18px}
+.eyebrow{font-size:11px;letter-spacing:2.2px;color:var(--lime);font-weight:900;margin-bottom:6px}
+
+/* ---------- buttons ---------- */
+.btn{
+  background:var(--lime); color:#12301a; border-radius:16px; padding:14px 22px; font-size:17px;
+  box-shadow:0 5px 0 #6fa82a; transition:transform .08s, box-shadow .08s; width:100%;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #6fa82a}
+.btn.sky{background:var(--sky);color:#04303f;box-shadow:0 5px 0 #1a8cb0}
+.btn.sky:active{box-shadow:0 1px 0 #1a8cb0}
+.btn.ghost{background:transparent;color:var(--mist);box-shadow:none;border:3px solid var(--edge)}
+.btn.ghost:active{transform:translateY(2px)}
+.btn.sun{background:var(--sun);color:#3a2400;box-shadow:0 5px 0 #c07f0c}
+.btn.sun:active{box-shadow:0 1px 0 #c07f0c}
+.row{display:flex;gap:10px;margin-top:12px}
+
+/* ---------- title ---------- */
+.hero{text-align:center;padding:6px 0 0}
+.hero h1{font-size:clamp(38px,11vw,64px);color:var(--bone);text-shadow:0 5px 0 #0a1c16}
+.hero h1 em{font-style:normal;color:var(--sun);display:block}
+.hero p{color:var(--mist);font-size:15px;max-width:34ch;margin:10px auto 0}
+.stage{position:relative;margin:4px auto 0;max-width:420px}
+.stage svg{width:100%;height:auto;display:block}
+.trot{animation:trot 2.4s ease-in-out infinite}
+@keyframes trot{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px) rotate(-1.2deg)}}
+
+/* ---------- trail map ---------- */
+.trail{position:relative;padding:6px 0}
+.stop{
+  display:flex;gap:14px;align-items:center;background:var(--panel);border:3px solid var(--edge);
+  border-radius:22px;padding:14px;margin-bottom:12px;width:100%;text-align:left;
+  transition:transform .1s, border-color .15s;
+}
+.stop:active{transform:scale(.985)}
+.stop[data-done="1"]{border-color:var(--sun)}
+.stop:disabled{opacity:.45;cursor:not-allowed}
+.stop .mark{flex:0 0 auto;width:44px;height:60px;border-radius:8px;background:#123024;border:3px solid var(--edge);
+  display:grid;place-items:center}
+.stop .mark i{display:block;width:14px;height:26px;background:var(--blaze);border-radius:2px;font-style:normal}
+.stop[data-done="1"] .mark i{background:var(--sun)}
+.stop h3{font-size:21px}
+.stop p{font-size:13px;color:var(--mist);font-weight:700;margin-top:2px}
+.stop .go{margin-left:auto;font-size:26px;color:var(--lime)}
+
+/* ---------- field guide ---------- */
+.guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+.gcard{background:var(--panel2);border:3px solid var(--edge);border-radius:18px;padding:10px;text-align:center;width:100%}
+.gcard svg{width:100%;height:auto}
+.gcard b{display:block;font-family:'Baloo 2';font-size:18px;margin-top:4px}
+.gcard span{display:block;font-size:12px;color:var(--mist);font-weight:700;line-height:1.35;margin-top:3px}
+
+/* ---------- play ---------- */
+.scanner{
+  position:relative;background:#0b1f19;border:3px solid var(--edge);border-radius:22px;overflow:hidden;
+  margin-bottom:12px;
+}
+.scanner svg{width:100%;height:auto;display:block}
+.scanner::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(53,196,240,.07) 0 2px,transparent 2px 6px);
+}
+.bracket{position:absolute;width:20px;height:20px;border:3px solid var(--sky);pointer-events:none}
+.b1{top:9px;left:9px;border-right:0;border-bottom:0}
+.b2{top:9px;right:9px;border-left:0;border-bottom:0}
+.b3{bottom:9px;left:9px;border-right:0;border-top:0}
+.b4{bottom:9px;right:9px;border-left:0;border-top:0}
+.prompt{background:var(--panel2);border:3px solid var(--edge);border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+.prompt .who{flex:0 0 auto}
+.prompt p{font-size:16px;line-height:1.3}
+.prompt b{color:var(--sun)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.opt{background:var(--panel2);border:3px solid var(--edge);border-radius:16px;padding:15px 8px;font-size:17px;
+  font-family:'Baloo 2';font-weight:800;transition:transform .08s}
+.opt:active{transform:scale(.96)}
+.opt.right{background:var(--lime);color:#12301a;border-color:var(--lime)}
+.opt.wrong{background:var(--berry);color:#3d0508;border-color:var(--berry)}
+.meter{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.pip{width:12px;height:12px;border-radius:50%;background:var(--edge)}
+.pip.hit{background:var(--lime)}
+.pip.miss{background:var(--berry)}
+
+.slider{width:100%;margin-top:14px;-webkit-appearance:none;background:transparent}
+.slider::-webkit-slider-runnable-track{height:16px;border-radius:10px;background:linear-gradient(90deg,var(--edge),var(--bone))}
+.slider::-moz-range-track{height:16px;border-radius:10px;background:linear-gradient(90deg,var(--edge),var(--bone))}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:38px;height:38px;border-radius:50%;background:var(--sun);
+  border:4px solid #3a2400;margin-top:-11px}
+.slider::-moz-range-thumb{width:34px;height:34px;border-radius:50%;background:var(--sun);border:4px solid #3a2400}
+
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(140%);
+  background:var(--sun);color:#3a2400;padding:14px 24px;border-radius:18px;font-family:'Baloo 2';font-size:20px;
+  z-index:80;box-shadow:0 8px 0 #c07f0c;transition:transform .35s cubic-bezier(.2,1.4,.4,1);max-width:92vw;text-align:center
+}
+.toast.up{transform:translateX(-50%) translateY(0)}
+.toast.bad{background:var(--berry);color:#3d0508;box-shadow:0 8px 0 #c23a45}
+
+/* ---------- video den ---------- */
+.clip{background:#0b1f19;border:3px solid var(--edge);border-radius:20px;overflow:hidden;margin-bottom:12px}
+.clipbody{position:relative}
+.clipbody svg{width:100%;height:auto;display:block}
+.cliphead{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--panel2)}
+.cliphead h3{font-size:18px}
+.cliphead .tag{margin-left:auto;font-size:11px;letter-spacing:1.4px;color:var(--night);background:var(--sky);
+  padding:4px 9px;border-radius:99px;font-weight:900}
+.clipnote{padding:10px 14px;font-size:13px;color:var(--mist);font-weight:700}
+.vlink{display:flex;align-items:center;gap:12px;background:var(--panel);border:3px solid var(--edge);
+  border-radius:18px;padding:13px;margin-bottom:10px;color:inherit;text-decoration:none}
+.vlink .play{width:38px;height:38px;border-radius:50%;background:var(--berry);display:grid;place-items:center;flex:0 0 auto}
+.vlink .play::after{content:"";border-left:13px solid var(--bone);border-top:9px solid transparent;
+  border-bottom:9px solid transparent;margin-left:4px}
+.vlink b{font-family:'Baloo 2';font-size:16px;display:block}
+.vlink span{font-size:12px;color:var(--mist)}
+
+.finalrow{margin-top:12px}
+.finalrow .lbl{font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:var(--panel2);border:3px solid var(--edge);border-radius:99px;padding:9px 14px;font-size:14px;font-weight:900}
+.chip.sel{background:var(--sky);color:#04303f;border-color:var(--sky)}
+
+.grow{animation:grow .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes grow{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:70;overflow:hidden}
+.conf{position:absolute;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.2}}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important}
+}
+@media (max-width:380px){ .opts{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="brandmark"><span></span></div>
+    <div class="brandtext">Horse ID Quest<small>TRAIL RANGERS</small></div>
+    <div class="badgetray" id="tray">
+      <div class="slot" data-b="0">★</div>
+      <div class="slot" data-b="1">★</div>
+      <div class="slot" data-b="2">★</div>
+      <div class="slot" data-b="3">★</div>
+    </div>
+  </div>
+
+  <!-- ================= TITLE ================= -->
+  <section class="screen on" id="s-title">
+    <div class="hero">
+      <div class="stage trot" id="titleHorse"></div>
+      <h1>Horse<em>ID Quest</em></h1>
+      <p>Every horse has a color, face markings, and leg markings. Learn to read them like a real ranger.</p>
+      <div class="row" style="max-width:340px;margin:16px auto 0">
+        <button class="btn" onclick="go('s-map');sfx('go')">Start the trail</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TRAIL MAP ================= -->
+  <section class="screen" id="s-map">
+    <div class="prompt" style="margin-bottom:14px">
+      <div class="who" id="ranger1"></div>
+      <p>The barn's ID cards blew away in the wind! Follow the <b>blue blazes</b> and help me write them all again.</p>
+    </div>
+    <div class="trail">
+      <button class="stop" id="stop0" onclick="openZone(0)">
+        <span class="mark"><i></i></span>
+        <span><h3>1. Color Lab</h3><p>Bay, chestnut, palomino and more</p></span>
+        <span class="go">›</span>
+      </button>
+      <button class="stop" id="stop1" onclick="openZone(1)">
+        <span class="mark"><i></i></span>
+        <span><h3>2. Face Paint</h3><p>Star, snip, stripe, blaze, bald face</p></span>
+        <span class="go">›</span>
+      </button>
+      <button class="stop" id="stop2" onclick="openZone(2)">
+        <span class="mark"><i></i></span>
+        <span><h3>3. Sock Sorter</h3><p>How high does the white go?</p></span>
+        <span class="go">›</span>
+      </button>
+      <button class="stop" id="stop3" onclick="openZone(3)">
+        <span class="mark"><i></i></span>
+        <span><h3>4. Full ID Challenge</h3><p>Describe a whole horse by yourself</p></span>
+        <span class="go">›</span>
+      </button>
+      <button class="stop" onclick="go('s-video')" style="border-style:dashed">
+        <span class="mark"><i style="background:var(--berry)"></i></span>
+        <span><h3>Ranger TV</h3><p>Watch clips any time you like</p></span>
+        <span class="go">›</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= ZONE 1: COLOR ================= -->
+  <section class="screen" id="s-color-learn">
+    <div class="card">
+      <div class="eyebrow">FIELD GUIDE · STOP 1</div>
+      <h2 style="font-size:28px">Horse colors</h2>
+      <p style="color:var(--mist);font-size:14px;margin-top:6px">Tap a horse to hear the trick for remembering it. <b style="color:var(--sun)">Points</b> means the ear tips, nose, mane, tail and legs.</p>
+      <div class="guide" id="colorGuide"></div>
+      <div class="row"><button class="btn ghost" onclick="go('s-map')">Back to trail</button><button class="btn" onclick="startColor()">Play Color Match</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-color-play">
+    <div class="scanner">
+      <div class="bracket b1"></div><div class="bracket b2"></div><div class="bracket b3"></div><div class="bracket b4"></div>
+      <div id="colorStage"></div>
+    </div>
+    <div class="prompt"><div class="who" id="ranger2"></div><p id="colorPrompt">What color is this horse?</p></div>
+    <div class="opts" id="colorOpts"></div>
+    <div class="meter" id="colorMeter"></div>
+    <div class="row"><button class="btn ghost" onclick="go('s-map')">Leave</button></div>
+  </section>
+
+  <!-- ================= ZONE 2: FACE ================= -->
+  <section class="screen" id="s-face-learn">
+    <div class="card">
+      <div class="eyebrow">FIELD GUIDE · STOP 2</div>
+      <h2 style="font-size:28px">Face markings</h2>
+      <p style="color:var(--mist);font-size:14px;margin-top:6px">White marks on a horse's face each have a name. Look at how big the white is and where it sits.</p>
+      <div class="guide" id="faceGuide"></div>
+      <div class="row"><button class="btn ghost" onclick="go('s-map')">Back to trail</button><button class="btn" onclick="startFace()">Play Face Paint</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-face-play">
+    <div class="scanner">
+      <div class="bracket b1"></div><div class="bracket b2"></div><div class="bracket b3"></div><div class="bracket b4"></div>
+      <div id="faceStage"></div>
+    </div>
+    <div class="prompt"><div class="who" id="ranger3"></div><p id="facePrompt">Paint a blaze!</p></div>
+    <div class="opts" id="faceOpts" style="grid-template-columns:1fr 1fr"></div>
+    <div class="meter" id="faceMeter"></div>
+    <div class="row"><button class="btn ghost" onclick="go('s-map')">Leave</button></div>
+  </section>
+
+  <!-- ================= ZONE 3: LEG ================= -->
+  <section class="screen" id="s-leg-learn">
+    <div class="card">
+      <div class="eyebrow">FIELD GUIDE · STOP 3</div>
+      <h2 style="font-size:28px">Leg markings</h2>
+      <p style="color:var(--mist);font-size:14px;margin-top:6px">White on a leg is named by how high it climbs. Start at the hoof and go up.</p>
+      <div class="guide" id="legGuide" style="grid-template-columns:repeat(auto-fill,minmax(112px,1fr))"></div>
+      <div class="row"><button class="btn ghost" onclick="go('s-map')">Back to trail</button><button class="btn" onclick="startLeg()">Play Sock Sorter</button></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-leg-play">
+    <div class="scanner" style="display:grid;place-items:center;padding:10px 0">
+      <div class="bracket b1"></div><div class="bracket b2"></div><div class="bracket b3"></div><div class="bracket b4"></div>
+      <div id="legStage" style="max-width:190px;width:60%"></div>
+    </div>
+    <div class="prompt"><div class="who" id="ranger4"></div><p id="legPrompt">Slide the white up to make a sock.</p></div>
+    <input class="slider" id="legSlider" type="range" min="0" max="100" value="4" aria-label="How high the white goes">
+    <div class="row">
+      <button class="btn ghost" onclick="go('s-map')">Leave</button>
+      <button class="btn sun" id="legLock" onclick="lockLeg()">Lock it in</button>
+    </div>
+    <div class="meter" id="legMeter"></div>
+  </section>
+
+  <!-- ================= ZONE 4: FULL ID ================= -->
+  <section class="screen" id="s-final">
+    <div class="scanner">
+      <div class="bracket b1"></div><div class="bracket b2"></div><div class="bracket b3"></div><div class="bracket b4"></div>
+      <div id="finalStage"></div>
+    </div>
+    <div class="prompt"><div class="who" id="ranger5"></div><p>Write the ID card for this horse. Pick <b>all three</b>, then send it in.</p></div>
+    <div class="finalrow"><div class="lbl">COLOR</div><div class="chips" id="fColor"></div></div>
+    <div class="finalrow"><div class="lbl">FACE MARKING</div><div class="chips" id="fFace"></div></div>
+    <div class="finalrow"><div class="lbl">LEG MARKING</div><div class="chips" id="fLeg"></div></div>
+    <div class="row"><button class="btn ghost" onclick="go('s-map')">Leave</button><button class="btn sun" onclick="submitFinal()">Send ID card</button></div>
+    <div class="meter" id="finalMeter"></div>
+  </section>
+
+  <!-- ================= RANGER TV ================= -->
+  <section class="screen" id="s-video">
+    <div class="card">
+      <div class="eyebrow">RANGER TV</div>
+      <h2 style="font-size:28px">Watch and learn</h2>
+
+      <div class="clip" style="margin-top:14px">
+        <div class="cliphead"><h3>A grey horse grows lighter</h3><span class="tag">PLAYS HERE</span></div>
+        <div class="clipbody" id="clipGrey"></div>
+        <div class="clipnote">Grey horses are born dark and get lighter every single year until they look almost white. Their skin stays dark underneath.</div>
+      </div>
+
+      <div class="clip">
+        <div class="cliphead"><h3>Spot the points</h3><span class="tag">PLAYS HERE</span></div>
+        <div class="clipbody" id="clipPoints"></div>
+        <div class="clipnote">Watch the glow. Points are the ear tips, nose, mane, tail and legs. Black points on a red body means <b>bay</b>.</div>
+      </div>
+
+      <p style="font-size:13px;color:var(--mist);margin:16px 0 10px">Real horse videos open in a new tab. Ask a grown-up first.</p>
+      <a class="vlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=horse+coat+colors+for+kids">
+        <span class="play"></span><span><b>Horse coat colors</b><span>See real bays, chestnuts and palominos</span></span>
+      </a>
+      <a class="vlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=horse+face+and+leg+markings+explained">
+        <span class="play"></span><span><b>Face and leg markings</b><span>Stars, blazes, socks and stockings</span></span>
+      </a>
+      <a class="vlink" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=how+to+groom+a+horse+for+beginners+kids">
+        <span class="play"></span><span><b>Grooming a horse</b><span>Meet a horse the safe way</span></span>
+      </a>
+
+      <div class="row"><button class="btn ghost" onclick="go('s-map')">Back to trail</button></div>
+    </div>
+  </section>
+
+  <!-- ================= WIN ================= -->
+  <section class="screen" id="s-win">
+    <div class="card" style="text-align:center">
+      <div class="stage grow" id="winHorse" style="max-width:320px;margin:0 auto"></div>
+      <div class="eyebrow" style="margin-top:8px">ALL FOUR BLAZES FOUND</div>
+      <h2 style="font-size:34px">You're a Trail Ranger!</h2>
+      <p style="color:var(--mist);font-size:15px;margin-top:8px;max-width:32ch;margin-inline:auto">
+        You can name a horse's color, read its face markings, and measure its leg markings. That's how real horse people describe a horse to a vet or a farrier.
+      </p>
+      <div class="row" style="max-width:320px;margin:16px auto 0">
+        <button class="btn sky" onclick="resetAll()">Ride it again</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+
+<script>
+/* ============================================================
+   DATA — straight from the USHJA HQC study guide, Horse
+   Identification section, rewritten for early readers.
+   ============================================================ */
+
+const COLORS = [
+  {id:'bay',      name:'Bay',       body:'#a8552b', pts:'#241812', hint:'Reddish brown with BLACK points.'},
+  {id:'darkbay',  name:'Dark Bay',  body:'#6d3a1e', pts:'#171009', hint:'A bay, but much darker.'},
+  {id:'black',    name:'Black',     body:'#2b2421', pts:'#171210', hint:'Black all over, no brown at all.'},
+  {id:'brown',    name:'Brown',     body:'#795335', pts:'#4a3220', hint:'Like a bay, but the points are brown.'},
+  {id:'chestnut', name:'Chestnut',  body:'#b4622c', pts:'#c9834a', hint:'Ginger red. Mane and tail match or are lighter.'},
+  {id:'liver',    name:'Liver Chestnut', body:'#5c3524', pts:'#6b4433', hint:'A chestnut with a dark purple hue.'},
+  {id:'grey',     name:'Grey',      body:'#c9c9cf', pts:'#aeaeb6', hint:'White or grey hair with dark skin underneath.', dapple:true},
+  {id:'steel',    name:'Steel Grey',body:'#8f929c', pts:'#6e727c', hint:'A darker grey, mixed with black hairs.'},
+  {id:'roan',     name:'Roan',      body:'#9a5a3e', pts:'#2a1a12', hint:'A dark coat with white hairs mixed in.', roan:true},
+  {id:'dun',      name:'Dun',       body:'#c9a161', pts:'#2a2018', hint:'Tan with a dark stripe down the back.', dorsal:true},
+  {id:'buckskin', name:'Buckskin',  body:'#d4a94f', pts:'#241a12', hint:'Golden tan with black points and NO back stripe.'},
+  {id:'palomino', name:'Palomino',  body:'#d9a83f', pts:'#f2e8cf', hint:'Golden coat with a cream mane and tail.'},
+  {id:'appaloosa',name:'Appaloosa', body:'#efeade', pts:'#6b5f52', hint:'Spots! Like a leopard or a snowy blanket.', spots:true},
+  {id:'pinto',    name:'Pinto',     body:'#a8552b', pts:'#241812', hint:'Big patches of color and white.', patches:true}
+];
+
+const FACES = [
+  {id:'none',  name:'No marking', hint:'A plain face with no white.'},
+  {id:'star',  name:'Star',       hint:'A white spot between the eyes.'},
+  {id:'snip',  name:'Snip',       hint:'A white spot down on the nose.'},
+  {id:'stripe',name:'Stripe',     hint:'A narrow white line down the face.'},
+  {id:'blaze', name:'Blaze',      hint:'A wide white band down the whole face.'},
+  {id:'bald',  name:'Bald Face',  hint:'So wide it reaches past the eyes.'}
+];
+
+/* value = how high the white climbs, 0-100 */
+const LEGS = [
+  {id:'none',    name:'No marking', v:0,  lo:0,  hi:2,  hint:'No white on the leg at all.'},
+  {id:'heel',    name:'Heel',       v:6,  lo:3,  hi:10, hint:'White on the bumps at the back of the hoof.'},
+  {id:'coronet', name:'Coronet',    v:15, lo:11, hi:21, hint:'A white ring right above the hoof.'},
+  {id:'pastern', name:'Pastern',    v:30, lo:23, hi:39, hint:'White above the hoof but below a sock.'},
+  {id:'sock',    name:'Sock',       v:56, lo:44, hi:70, hint:'White past the ankle, but under the knee.'},
+  {id:'stocking',name:'Stocking',   v:88, lo:78, hi:100,hint:'White all the way to the knee or hock.'}
+];
+
+/* ============================================================
+   ART — one horse, drawn once, recolored everywhere.
+   ============================================================ */
+
+function horseSVG(c, opts={}){
+  const uid = 'h'+Math.random().toString(36).slice(2,8);
+  const body = c.body, pts = c.pts;
+  let extra = '';
+  if(c.roan) extra += `<g clip-path="url(#${uid})" stroke="none" opacity=".75">${speckle(uid)}</g>`;
+  if(c.dapple) extra += `<g clip-path="url(#${uid})" stroke="none" opacity=".5">${dapples()}</g>`;
+  if(c.spots) extra += `<g clip-path="url(#${uid})" stroke="none" fill="#4a4038" opacity=".9">${spots()}</g>`;
+  if(c.patches) extra += `<g clip-path="url(#${uid})" stroke="none" fill="#f4f7ea">
+      <ellipse cx="150" cy="118" rx="42" ry="28"/><ellipse cx="104" cy="76" rx="26" ry="20"/>
+      <ellipse cx="196" cy="88" rx="20" ry="24"/><rect x="106" y="120" width="22" height="52" rx="8"/></g>`;
+  if(c.dorsal) extra += `<path d="M94,66 C120,52 176,52 200,74" fill="none" stroke="${pts}" stroke-width="7" stroke-linecap="round" opacity=".9"/>`;
+  return `
+<svg viewBox="0 0 260 200" role="img" aria-label="${c.name} horse">
+  <defs><clipPath id="${uid}">
+    <path d="M92,96 C92,66 118,58 146,58 C176,58 200,70 202,98 C204,126 186,140 148,140 C110,140 92,126 92,96 Z"/>
+    <path d="M126,104 C114,80 100,54 84,36 L58,54 C70,78 82,102 94,118 Z"/>
+    <path d="M94,38 C88,20 70,12 56,20 L30,38 C20,45 20,58 32,62 L50,64 C64,62 76,54 84,44 Z"/>
+    <path d="M118,124 L112,170 L126,170 L132,124 Z"/><path d="M166,126 L164,170 L178,170 L180,126 Z"/>
+  </clipPath></defs>
+  <g stroke="#0a1c16" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+    <path class="pt" d="M196,86 C222,74 232,96 226,120 C222,138 210,150 200,152 C208,132 206,110 194,104 Z" fill="${pts}"/>
+    <path d="M106,120 L102,168 L114,168 L118,120 Z" fill="${shade(body,-14)}"/>
+    <path d="M182,122 L180,168 L192,168 L194,122 Z" fill="${shade(body,-14)}"/>
+    <path d="M92,96 C92,66 118,58 146,58 C176,58 200,70 202,98 C204,126 186,140 148,140 C110,140 92,126 92,96 Z" fill="${body}"/>
+    <path d="M118,124 L112,170 L126,170 L132,124 Z" fill="${body}"/>
+    <path d="M166,126 L164,170 L178,170 L180,126 Z" fill="${body}"/>
+    <path d="M126,104 C114,80 100,54 84,36 L58,54 C70,78 82,102 94,118 Z" fill="${body}"/>
+    <path class="pt" d="M70,26 L64,4 L84,20 Z" fill="${pts}"/>
+    <path class="pt" d="M86,30 L90,10 L100,30 Z" fill="${pts}"/>
+    <path d="M94,38 C88,20 70,12 56,20 L30,38 C20,45 20,58 32,62 L50,64 C64,62 76,54 84,44 Z" fill="${body}"/>
+    ${extra}
+    <ellipse class="pt" cx="31" cy="50" rx="14" ry="12.5" fill="${pts}"/>
+    <path class="pt" d="M84,36 C96,50 110,74 122,96 L134,90 C122,64 106,40 92,26 Z" fill="${pts}"/>
+    <rect x="100" y="156" width="16" height="16" rx="5" fill="#4a4a52"/><rect x="178" y="156" width="16" height="16" rx="5" fill="#4a4a52"/>
+    <rect x="111" y="156" width="18" height="18" rx="5" fill="#5a5a63"/><rect x="163" y="156" width="18" height="18" rx="5" fill="#5a5a63"/>
+    <circle cx="58" cy="40" r="4.2" fill="#0a1c16" stroke="none"/>
+    <ellipse cx="27" cy="48" rx="3" ry="4" fill="#0a1c16" stroke="none"/>
+  </g>
+</svg>`;
+}
+function speckle(){let s='';for(let i=0;i<170;i++){const x=20+Math.random()*200,y=10+Math.random()*160;
+  s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1+Math.random()*1.6).toFixed(1)}" fill="#f4f7ea"/>`}return s}
+function dapples(){let s='';for(let i=0;i<26;i++){const x=95+Math.random()*105,y=62+Math.random()*72;
+  s+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(5+Math.random()*4).toFixed(0)}" fill="#8f8f99"/>`}return s}
+function spots(){let s='';for(let i=0;i<30;i++){const x=90+Math.random()*115,y=58+Math.random()*80;
+  s+=`<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="${(4+Math.random()*4).toFixed(0)}" ry="${(3+Math.random()*3).toFixed(0)}"/>`}return s}
+function shade(hex,amt){const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}
+
+const FACE_D = "M80,16 C50,16 36,38 36,72 C36,98 44,122 50,142 C46,152 48,168 58,176 C66,182 94,182 102,176 C112,168 114,152 110,142 C116,122 124,98 124,72 C124,38 110,16 80,16 Z";
+function faceSVG(markId, coat){
+  const uid='f'+Math.random().toString(36).slice(2,8);
+  const body = coat || '#a8552b';
+  const M={
+    none:'',
+    star:`<ellipse cx="80" cy="58" rx="14" ry="16"/>`,
+    snip:`<ellipse cx="80" cy="152" rx="15" ry="14"/>`,
+    stripe:`<rect x="71" y="46" width="18" height="120" rx="9"/>`,
+    blaze:`<rect x="60" y="18" width="40" height="156" rx="18"/>`,
+    bald:`<rect x="42" y="10" width="76" height="172" rx="26"/>`
+  };
+  return `
+<svg viewBox="-4 -10 168 214" role="img" aria-label="Horse face">
+  <defs><clipPath id="${uid}"><path d="${FACE_D}"/></clipPath></defs>
+  <g stroke="#0a1c16" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M52,20 L38,-2 L66,10 Z" fill="${body}"/><path d="M108,20 L122,-2 L94,10 Z" fill="${body}"/>
+    <path d="${FACE_D}" fill="${body}"/>
+    <g clip-path="url(#${uid})" stroke="none" fill="#f7faf0" class="mk">${M[markId]||''}</g>
+    <path d="${FACE_D}" fill="none"/>
+    <circle cx="52" cy="70" r="7" fill="#0a1c16" stroke="none"/><circle cx="108" cy="70" r="7" fill="#0a1c16" stroke="none"/>
+    <ellipse cx="66" cy="156" rx="6" ry="8" fill="#3b2418" stroke="none"/>
+    <ellipse cx="94" cy="156" rx="6" ry="8" fill="#3b2418" stroke="none"/>
+  </g>
+</svg>`;
+}
+
+const LEG_D="M28,10 C20,40 22,70 30,92 L30,120 C30,150 34,170 36,186 L36,206 C36,218 34,224 32,232 L68,232 C66,224 64,218 64,206 L64,186 C66,170 70,150 70,120 L70,92 C78,70 80,40 72,10 Z";
+/* v 0..100 maps to white top edge: 100 -> y=8 (knee), 0 -> y=234 (below hoof) */
+function legSVG(v, ermine){
+  const uid='l'+Math.random().toString(36).slice(2,8);
+  const top = 234 - (v/100)*226;
+  let dots='';
+  if(ermine) dots = `<circle cx="46" cy="212" r="4.5" fill="#241812"/><circle cx="58" cy="222" r="3.5" fill="#241812"/><circle cx="38" cy="224" r="3" fill="#241812"/>`;
+  return `
+<svg viewBox="0 0 100 275" role="img" aria-label="Horse leg">
+  <defs><clipPath id="${uid}"><path d="${LEG_D}"/></clipPath></defs>
+  <g stroke="#0a1c16" stroke-width="3.5" stroke-linejoin="round">
+    <path d="${LEG_D}" fill="#a8552b"/>
+    <g clip-path="url(#${uid})" stroke="none">
+      <rect x="8" y="${top.toFixed(1)}" width="84" height="${(240-top).toFixed(1)}" fill="#f7faf0"/>
+      ${dots}
+    </g>
+    <path d="${LEG_D}" fill="none"/>
+    <path d="M30,232 L70,232 C74,244 74,258 68,264 L32,264 C26,258 26,244 30,232 Z" fill="#4a4a52"/>
+  </g>
+</svg>`;
+}
+
+function rangerSVG(size=44){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 60 60" aria-hidden="true">
+    <circle cx="30" cy="32" r="18" fill="#e0a878" stroke="#0a1c16" stroke-width="3"/>
+    <path d="M8,24 C14,10 46,10 52,24 C46,20 14,20 8,24 Z" fill="#9ede3f" stroke="#0a1c16" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M17,22 C19,12 41,12 43,22 Z" fill="#7cc02b" stroke="#0a1c16" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="24" cy="33" r="3" fill="#0a1c16"/><circle cx="37" cy="33" r="3" fill="#0a1c16"/>
+    <path d="M24,42 C27,46 34,46 37,42" fill="none" stroke="#0a1c16" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/* ============================================================
+   ENGINE
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const state = { badges:[false,false,false,false] };
+const shuffle = a => a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  $('#'+id).classList.add('on');
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+let ac;
+function sfx(kind){
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    const seq = {good:[660,880],bad:[220,165],go:[440,660],badge:[523,659,784,1046]}[kind]||[440];
+    seq.forEach((f,i)=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001, ac.currentTime+i*.09);
+      g.gain.exponentialRampToValueAtTime(.16, ac.currentTime+i*.09+.02);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime+i*.09+.18);
+      o.connect(g); g.connect(ac.destination); o.start(ac.currentTime+i*.09); o.stop(ac.currentTime+i*.09+.2);
+    });
+  }catch(e){}
+}
+
+let toastT;
+function toast(msg, bad){
+  const t=$('#toast'); t.textContent=msg; t.classList.toggle('bad',!!bad); t.classList.add('up');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('up'),1500);
+}
+
+function confetti(){
+  const box=$('#confetti'), cols=['#9ede3f','#35c4f0','#ffb020','#ff5f6d','#f4f7ea'];
+  for(let i=0;i<70;i++){
+    const d=document.createElement('div'); d.className='conf';
+    d.style.left=Math.random()*100+'vw'; d.style.top='-20px';
+    d.style.background=pick(cols); d.style.animationDuration=(1.6+Math.random()*1.4)+'s';
+    d.style.animationDelay=(Math.random()*.4)+'s';
+    box.appendChild(d); setTimeout(()=>d.remove(),3400);
+  }
+}
+
+function awardBadge(i){
+  if(state.badges[i]) return;
+  state.badges[i]=true;
+  document.querySelector(`.slot[data-b="${i}"]`).classList.add('won');
+  document.querySelector('#stop'+i).dataset.done='1';
+  sfx('badge'); confetti();
+  setTimeout(()=>{
+    if(state.badges.every(Boolean)){ go('s-win'); confetti(); }
+    else { toast('Blue blaze found!'); go('s-map'); }
+  }, 900);
+}
+
+const ZONES=[['s-color-learn'],['s-face-learn'],['s-leg-learn'],['s-final']];
+function openZone(i){
+  sfx('go');
+  if(i===3){ startFinal(); return; }
+  go(ZONES[i][0]);
+}
+
+/* ---------- ZONE 1: COLOR ---------- */
+function buildColorGuide(){
+  $('#colorGuide').innerHTML = COLORS.map((c,i)=>
+    `<button class="gcard" onclick="toast('${c.name}: ${c.hint.replace(/'/g,"")}');sfx('go')">
+      ${horseSVG(c)}<b>${c.name}</b><span>${c.hint}</span></button>`).join('');
+}
+let colorQ=[], colorI=0, colorHits=[];
+function startColor(){
+  colorQ = shuffle(COLORS).slice(0,8); colorI=0; colorHits=[];
+  go('s-color-play'); nextColor();
+}
+function nextColor(){
+  if(colorI>=colorQ.length){ finishRound(colorHits, 0, startColor); return; }
+  const right = colorQ[colorI];
+  $('#colorStage').innerHTML = horseSVG(right);
+  $('#colorPrompt').innerHTML = 'What color is this horse?';
+  const wrong = shuffle(COLORS.filter(c=>c.id!==right.id)).slice(0,3);
+  const opts = shuffle([right,...wrong]);
+  $('#colorOpts').innerHTML = opts.map(o=>`<button class="opt" data-id="${o.id}">${o.name}</button>`).join('');
+  $('#colorOpts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if(b.dataset.locked) return;
+    const ok = b.dataset.id===right.id;
+    b.classList.add(ok?'right':'wrong');
+    $('#colorOpts').querySelectorAll('.opt').forEach(x=>x.dataset.locked='1');
+    if(!ok) $('#colorOpts').querySelector(`[data-id="${right.id}"]`).classList.add('right');
+    colorHits.push(ok); sfx(ok?'good':'bad');
+    toast(ok ? 'Yes! ' + right.hint : 'It was ' + right.name + '. ' + right.hint, !ok);
+    drawMeter('#colorMeter', colorHits, 8);
+    colorI++; setTimeout(nextColor, ok?1000:2100);
+  });
+  drawMeter('#colorMeter', colorHits, 8);
+}
+
+/* ---------- ZONE 2: FACE ---------- */
+function buildFaceGuide(){
+  $('#faceGuide').innerHTML = FACES.filter(f=>f.id!=='none').map(f=>
+    `<button class="gcard" onclick="toast('${f.name}: ${f.hint}');sfx('go')">
+      ${faceSVG(f.id)}<b>${f.name}</b><span>${f.hint}</span></button>`).join('');
+}
+let faceQ=[], faceI=0, faceHits=[];
+const FACE_PLAY = FACES.filter(f=>f.id!=='none');
+function startFace(){
+  faceQ = shuffle(FACE_PLAY).concat(shuffle(FACE_PLAY)).slice(0,6); faceI=0; faceHits=[];
+  go('s-face-play'); nextFace();
+}
+function nextFace(){
+  if(faceI>=faceQ.length){ finishRound(faceHits, 1, startFace); return; }
+  const target = faceQ[faceI];
+  $('#faceStage').innerHTML = faceSVG('none');
+  $('#facePrompt').innerHTML = 'Paint a <b>'+target.name.toLowerCase()+'</b> on this horse.';
+  $('#faceOpts').innerHTML = FACE_PLAY.map(f=>`<button class="opt" data-id="${f.id}">${f.name}</button>`).join('');
+  $('#faceOpts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if(b.dataset.locked) return;
+    $('#faceStage').innerHTML = faceSVG(b.dataset.id);
+    const ok = b.dataset.id===target.id;
+    if(!ok){ sfx('bad'); toast('Not quite. '+target.hint, true); return; }
+    b.classList.add('right');
+    $('#faceOpts').querySelectorAll('.opt').forEach(x=>x.dataset.locked='1');
+    faceHits.push(true); sfx('good'); toast('Perfect '+target.name.toLowerCase()+'! '+target.hint);
+    drawMeter('#faceMeter', faceHits, 6);
+    faceI++; setTimeout(nextFace, 1300);
+  });
+  drawMeter('#faceMeter', faceHits, 6);
+}
+
+/* ---------- ZONE 3: LEG ---------- */
+function buildLegGuide(){
+  $('#legGuide').innerHTML = LEGS.filter(l=>l.id!=='none').map(l=>
+    `<button class="gcard" onclick="toast('${l.name}: ${l.hint}');sfx('go')">
+      ${legSVG(l.v)}<b>${l.name}</b><span>${l.hint}</span></button>`).join('')
+    + `<button class="gcard" onclick="toast('Ermine: black dots inside a white leg marking.');sfx('go')">
+      ${legSVG(56,true)}<b>Ermine</b><span>Black dots inside the white.</span></button>`;
+}
+let legQ=[], legI=0, legHits=[];
+const LEG_PLAY = LEGS.filter(l=>l.id!=='none');
+function startLeg(){
+  legQ = shuffle(LEG_PLAY).concat(shuffle(LEG_PLAY)).slice(0,6); legI=0; legHits=[];
+  go('s-leg-play'); nextLeg();
+}
+function drawLeg(){ $('#legStage').innerHTML = legSVG(+$('#legSlider').value); }
+function nextLeg(){
+  if(legI>=legQ.length){ finishRound(legHits, 2, startLeg); return; }
+  const t = legQ[legI];
+  $('#legSlider').value = 4; drawLeg();
+  $('#legPrompt').innerHTML = 'Slide the white up to make a <b>'+t.name.toLowerCase()+'</b>.';
+  $('#legLock').disabled = false;
+  drawMeter('#legMeter', legHits, 6);
+}
+function lockLeg(){
+  const t = legQ[legI], v = +$('#legSlider').value;
+  const ok = v>=t.lo && v<=t.hi;
+  legHits.push(ok); sfx(ok?'good':'bad');
+  if(ok){ toast('That is a '+t.name.toLowerCase()+'! '+t.hint); }
+  else {
+    toast('Close. '+t.hint, true);
+    $('#legSlider').value = t.v; drawLeg();
+  }
+  $('#legLock').disabled = true;
+  drawMeter('#legMeter', legHits, 6);
+  legI++; setTimeout(nextLeg, ok?1200:2200);
+}
+
+/* ---------- ZONE 4: FULL ID ---------- */
+let fTarget={}, fPick={};
+function startFinal(){
+  fPick={};
+  const c = pick(COLORS), f = pick(FACES.filter(x=>x.id!=='none')), l = pick(LEGS.filter(x=>x.id!=='none'));
+  fTarget={c,f,l};
+  $('#finalStage').innerHTML =
+    `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 6px">
+       <div style="flex:0 0 30%;max-width:130px">${faceSVG(f.id, c.body)}</div>
+       <div style="flex:1 1 auto;max-width:210px">${horseSVG(c)}</div>
+       <div style="flex:0 0 16%;max-width:70px">${legSVG(l.v)}</div>
+     </div>`;
+  const cOpts = shuffle([c, ...shuffle(COLORS.filter(x=>x.id!==c.id)).slice(0,3)]);
+  const fOpts = shuffle([f, ...shuffle(FACES.filter(x=>x.id!==f.id&&x.id!=='none')).slice(0,2)]);
+  const lOpts = shuffle([l, ...shuffle(LEGS.filter(x=>x.id!==l.id&&x.id!=='none')).slice(0,2)]);
+  chips('#fColor', cOpts, 'c'); chips('#fFace', fOpts, 'f'); chips('#fLeg', lOpts, 'l');
+  $('#finalMeter').innerHTML='';
+  go('s-final');
+}
+function chips(sel, arr, key){
+  $(sel).innerHTML = arr.map(o=>`<button class="chip" data-k="${key}" data-id="${o.id}">${o.name}</button>`).join('');
+  $(sel).querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+    $(sel).querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel'); fPick[key]=b.dataset.id; sfx('go');
+  });
+}
+function submitFinal(){
+  if(!fPick.c||!fPick.f||!fPick.l){ toast('Pick one from all three rows.', true); sfx('bad'); return; }
+  const ok = fPick.c===fTarget.c.id && fPick.f===fTarget.f.id && fPick.l===fTarget.l.id;
+  if(ok){
+    sfx('good');
+    toast('ID card sent: a ' + fTarget.c.name.toLowerCase() + ' with a ' + fTarget.f.name.toLowerCase() + ' and a ' + fTarget.l.name.toLowerCase() + '.');
+    setTimeout(()=>awardBadge(3), 1400);
+  } else {
+    sfx('bad');
+    toast('Almost. This one is a ' + fTarget.c.name.toLowerCase() + ' with a ' + fTarget.f.name.toLowerCase() + ' and a ' + fTarget.l.name.toLowerCase() + '.', true);
+    setTimeout(startFinal, 2600);
+  }
+}
+
+/* ---------- shared ---------- */
+function drawMeter(sel, hits, total){
+  let h='';
+  for(let i=0;i<total;i++){
+    const cls = hits[i]===undefined ? '' : (hits[i]?'hit':'miss');
+    h += `<span class="pip ${cls}"></span>`;
+  }
+  $(sel).innerHTML=h;
+}
+function finishRound(hits, badgeIdx, again){
+  const right = hits.filter(Boolean).length;
+  if(right >= Math.ceil(hits.length*0.7)){
+    toast('Great tracking! '+right+' out of '+hits.length+'.');
+    setTimeout(()=>awardBadge(badgeIdx), 700);
+  } else {
+    toast('You got '+right+' out of '+hits.length+'. Try the trail again!', true);
+    setTimeout(again, 1800);
+  }
+}
+function resetAll(){
+  state.badges=[false,false,false,false];
+  document.querySelectorAll('.slot').forEach(s=>s.classList.remove('won'));
+  document.querySelectorAll('.stop').forEach(s=>s.dataset.done='0');
+  go('s-map');
+}
+
+/* ---------- Ranger TV animated clips ---------- */
+function buildClips(){
+  const stages = ['#161211','#4a4a52','#8f929c','#c9c9cf','#eef0f3'];
+  $('#clipGrey').innerHTML = `
+    <div id="greyBox">${horseSVG({name:'Grey',body:stages[0],pts:shade(stages[0],-10)})}</div>
+    <div style="display:flex;justify-content:space-between;padding:0 16px 12px;font-size:12px;color:var(--mist)">
+      <span>foal</span><span id="greyAge" style="color:var(--sun);font-weight:900">1 year old</span><span>older</span></div>`;
+  let gi=0;
+  setInterval(()=>{
+    gi=(gi+1)%stages.length;
+    $('#greyBox').innerHTML = horseSVG({name:'Grey',body:stages[gi],pts:shade(stages[gi],-12),dapple:gi>2});
+    $('#greyAge').textContent = ['1 year old','3 years old','6 years old','10 years old','15 years old'][gi];
+  }, 1600);
+
+  $('#clipPoints').innerHTML = `<div id="ptsBox">${horseSVG(COLORS[0])}</div>`;
+  const style=document.createElement('style');
+  style.textContent = `#ptsBox .pt{animation:glowpt 2.4s ease-in-out infinite}
+    @keyframes glowpt{0%,100%{filter:none}50%{filter:drop-shadow(0 0 9px #ffb020) brightness(1.5)}}`;
+  document.head.appendChild(style);
+}
+
+/* ---------- boot ---------- */
+(function init(){
+  $('#titleHorse').innerHTML = horseSVG(COLORS[0]);
+  $('#winHorse').innerHTML = horseSVG(COLORS[11]);
+  ['#ranger1','#ranger2','#ranger3','#ranger4','#ranger5'].forEach(s=>$(s).innerHTML=rangerSVG(44));
+  buildColorGuide(); buildFaceGuide(); buildLegGuide(); buildClips();
+  $('#legSlider').addEventListener('input', drawLeg);
+  drawLeg();
+})();
+</script>
+</body>
+</html>
